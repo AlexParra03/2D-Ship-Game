@@ -1,0 +1,12 @@
+
+-Make Bullet Class [done]
+-add ships' health [done]
+-add collision between bullet and ships [done]
+-add ship's reload time [done]
+-add collision between ships
+-add relation between ship life-Points and health- percentage
+-improve rotation when ship are/aren't moving
+-improve surrounding Bullets when ship Shoots
+-improve Bullet collision to adjust to surrounding bullets
+
+

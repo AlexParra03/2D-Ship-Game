@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+body{ margin:10px; background:#CCC; }
+#my_canvas{ background:#FFF; border:#000 1px solid; }
+</style>
+<script>
+
+    
+
+
+
+function Init() {
+	var ctx = document.getElementById('my_canvas').getContext('2d');
+	var ctxWidth = ctx.canvas.width;
+	var ctxHeight = ctx.canvas.height;
+	var cannonballs = [];
+	var cannonballs_id = 1;
+	var ships = [];
+	var ships_id = 1;
+	
+	function NewShip(width, height, color, name){
+		ships[ships_id-1] = new Player(width, height, color, name);
+		ships_id++;
+	};
+	
+	//-- BULLET --
+	function Bullet(owner, xpos, ypos, rotation, speed){
+		this.extraBullets = [];
+		for(var x=1; x < 5; x++ ){ this.extraBullets[x-1] = (Math.random() * 40) - 20};  //making '4' bullet y position before rendering
+		this.owner = owner;
+		this.x = xpos;
+		this.y = ypos;
+		this.angle = rotation + 90;
+		this.width = 10;
+		this.height = 10;
+		this.speed = speed;
+		this.color = "black";
+		
+		this.DetectCollision = function(x1,y1,x2,y2){
+			if(this.x > x1 && this.x < x2){
+				if(this.y > y1 && this.y < y2) {return true}
+			};
+		};
+		this.Draw_MoreBullets = function(width,height){
+			for(var x=1; x < 5; x++ ){ 
+				ctx.fillRect((x*10)-20, this.extraBullets[x], this.width, this.height); };  //rendering from pre-made y position, X position is not random
+		};
+		this.Render = function(){
+			ctx.save();
+			ctx.fillStyle = this.color;
+			ctx.translate(this.x, this.y);
+			ctx.rotate((this.angle) * (Math.PI / 180));
+			ctx.fillRect( -1 * this.width/2, -1 * this.height/2, this.width, this.height);
+			this.Draw_MoreBullets();
+			ctx.restore();     
+		};
+		this.Update_Position = function(){
+			this.x += this.speed * Math.cos(this.angle * (Math.PI / 180));
+			this.y += this.speed * Math.sin(this.angle * (Math.PI / 180));
+			//this.speed *= decreasePerc;  
+		};
+
+		this.Update = function(){
+			this.Update_Position();
+			this.Render();
+		};
+	};
+	
+	//--- PLAYER --
+	function Player(width, height, color, name){
+		this.health = 1;
+		this.name = name;
+		this.speed = 0;
+		this.reloadSec = 3;
+		
+		this.reloaded = true;
+		this.input_ULDR = [false,false,false,false]; //Up Left Down Right
+		this.angle = -90;
+		this.x = 200;
+		this.y = 300;
+		this.width = width;
+		this.height = height;
+		this.color = color;
+		var self = this;
+		
+		this.Draw_HealthBar = function(barWidth, barHeight, xpos, ypos){
+			ctx.fillStyle = "red";
+			ctx.fillRect((-1 * this.width/2)+xpos, (-1 * this.height/2)+ypos,barWidth,barHeight);
+			ctx.fillStyle = "green";
+			ctx.fillRect((-1 * this.width/2)+xpos, (-1 * this.height/2)+ypos,barWidth * this.health,barHeight);
+
+		};
+		this.Reload = function(reloadSec){
+				
+				self.reloaded = true;
+				
+		};
+		this.Shoot = function(speed) {
+			console.log("Test: " + this.reloaded);
+			if(this.reloaded){
+				cannonballs[cannonballs_id -1] = new Bullet(this.name, this.x, this.y, this.angle, speed);
+				cannonballs_id++;
+				this.reloaded = false;
+				setTimeout(this.Reload, this.reloadSec *1000);
+			};
+		};
+		this.Update_Position = function(decreasePerc) {
+			this.x += this.speed * Math.cos(this.angle * (Math.PI / 180));
+			this.y += this.speed * Math.sin(this.angle * (Math.PI / 180));
+			this.speed *= decreasePerc;    
+			if (this.angle > 720 || this.angle < -720 ) {this.angle = 360 % this.angle};
+		};	
+		this.Update_Health = function(){
+			if(this.health <= 0){this.health = 0};
+		};
+		this.Movement = function(angleMovement, acceleration) {
+			if(this.input_ULDR[0] == true){this.speed+= acceleration}
+			else if(this.input_ULDR[2] == true){};//this.speed-= acceleration};
+		
+			if(this.input_ULDR[1] == true){this.angle -= angleMovement}
+			else if(this.input_ULDR[3] == true) {this.angle += angleMovement};    
+		};	
+		this.Render = function(){
+			ctx.save();
+			ctx.translate(this.x, this.y);
+			this.Draw_HealthBar(40,10,10,-30);
+			ctx.rotate((this.angle) * (Math.PI / 180));
+			ctx.fillStyle = this.color;
+			ctx.fillRect( -1 * this.width/2, -1 * this.height/2, this.width, this.height);
+			ctx.restore();       
+		};		
+		this.Input_KeyDown = function(key, Up_Key, Down_Key, Left_Key, Right_Key, Left_Shoot, Right_Shoot){     
+			switch(key){
+				case Up_Key:
+					this.input_ULDR[0] = true;
+					break;
+				case Down_Key:
+					this.input_ULDR[2] = true;
+					break;
+				case Left_Key:
+					this.input_ULDR[1] = true;
+					break;
+				case Right_Key:
+					this.input_ULDR[3] = true;
+					break;        
+				case Left_Shoot:
+					this.Shoot(-10);
+					break;
+				case Right_Shoot:
+					this.Shoot(10);
+					break;
+				}
+		};
+		this.Input_KeyUp = function(key, Up_Key, Down_Key, Left_Key, Right_Key) {
+			switch(key){
+				case Up_Key:
+					this.input_ULDR[0] = false;
+					break;
+				case Down_Key:
+					this.input_ULDR[2] = false;
+					break;
+				case Left_Key:
+					this.input_ULDR[1] = false;
+					break;
+				case Right_Key:
+					this.input_ULDR[3] = false;
+					break;  }      
+		};
+		
+		this.Update = function(){
+			this.Movement(.8,.5);
+			this.Update_Position(.80);
+			this.Update_Health();
+			this.Render();
+			
+			
+
+
+		};
+	};
+
+	NewShip(70, 40, "blue", "Alex");
+	NewShip(40, 30, "red", "enemy");
+
+	
+	//var shoot1 = new Bullet("Alex", 200, 150, 26, 10);
+
+
+	function MainLoop(){
+		requestAnimationFrame(MainLoop);
+		ctx.clearRect(0,0,ctxWidth, ctxHeight);
+		for(var i=0;i < cannonballs.length; i++){
+			cannonballs[i].Update();
+			
+			if(cannonballs[i].x > ctxWidth  || cannonballs[i].x < 0) {      //Delete bullet out of screen
+				cannonballs.splice(i, 1);
+				cannonballs_id--;
+			}
+			else if(cannonballs[i].y > ctxHeight  || cannonballs[i].y < 0){ //Delete bullet out of screen
+					cannonballs.splice(i, 1);
+					cannonballs_id--;
+			} else {
+				for(var ship=0;ship < ships.length; ship++){    //check collition with ships
+					if( cannonballs[i].DetectCollision(ships[ship].x -(ships[ship].width / 2), ships[ship].y-(ships[ship].height/2), ships[ship].x + (ships[ship].width/2) , ships[ship].y + (ships[ship].height/2)) ) { //if Bullet.instance.DetectCollision = True -> 
+						if(ships[ship].name != cannonballs[i].owner){                                                                                       //reduce ship health, delete cannonball(Bullet) from Object list and Id
+							ships[ship].health -= 0.10;
+							cannonballs.splice(i, 1);
+							cannonballs_id--;
+						}
+					};
+				}; 
+			}
+		};
+		for(var i=0;i<ships.length;i++){
+			ships[i].Update();
+		};
+
+	};
+	
+	MainLoop();
+	
+	
+	
+
+window.addEventListener('keydown', function(event) {
+	ships[0].Input_KeyDown(event.keyCode, 87, 83, 65, 68, 78, 77);
+
+}); 
+
+window.addEventListener('keyup', function(event) {
+	ships[0].Input_KeyUp(event.keyCode, 87, 83, 65, 68);
+
+});
+
+};
+
+
+
+window.addEventListener('load', function(event) {
+    Init();	
+});
+
+
+
+</script>
+</head>
+
+<body>
+<canvas id="my_canvas" width="800" height="500"></canvas>
+<p> Move: W-A-S-D; Shoot: N-M
+</body>  
+</html>

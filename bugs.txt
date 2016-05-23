@@ -1,0 +1,2 @@
+-Bullets dissapear when another bullet is 
+  deleted form the class. [Fixed]
